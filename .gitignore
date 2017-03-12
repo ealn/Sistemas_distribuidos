@@ -1,0 +1,11 @@
+# Ignora todos los ficheros .ini
+*.ini
+
+# Ignora todos los ficheros .obj
+*.obj
+
+# Ignora todos los ficheros .exe
+*.exe
+
+# Ignora todos los ficheros .class
+*.class
