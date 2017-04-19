@@ -6,12 +6,16 @@ public class Client extends Thread implements Constants
 {
     private Socket  clientSocket = null;
     private String  clientName = null;
+    private TCPServer tcpServer = null;
+    private ServerConnections server = null;
     private boolean connected = false;
     private boolean closed = false;
     
-    public Client(String name)
+    public Client(String name, ServerConnections serverCon, TCPServer tcpser)
     {
         super(name);
+        server = serverCon;
+        tcpServer = tcpser;
     }
     
     public void run()
@@ -21,17 +25,17 @@ public class Client extends Thread implements Constants
         while (!closed)
         {
             //wait for a connection
-            clientSocket = TCPServer.acceptConnetion();
+            clientSocket = tcpServer.acceptConnetion();
             
             if (clientSocket != null)
             {
                 connected = true;
-                ServerConnections.updateClientList(true);
+                server.updateClientList(true);
         
                 while (connected)
                 {    
-                    retStr = TCPServer.receive(clientSocket);
-                    ServerConnections.messReceived(retStr, this);
+                    retStr = tcpServer.receive(clientSocket);
+                    server.messReceived(retStr, this);
                 }
             }
             else
@@ -91,7 +95,7 @@ public class Client extends Thread implements Constants
         if (message != null
             && clientSocket != null)
         {
-            TCPServer.send(clientSocket, message);
+            tcpServer.send(clientSocket, message);
         }
     }
 }

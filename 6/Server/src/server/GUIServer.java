@@ -9,14 +9,15 @@ import javax.swing.*;
 public class GUIServer implements Constants
 {
 
-    private JFrame             frmTcpServer;
-    private static JTextField  textFieldPort;
-    private static JButton     btnInitServer;
-    private static JButton     btnCloseServer;
-    private static JTextArea   textAreaClientList;
-    private static JTextArea   textAreaMessReceived;
-    private JScrollPane scrollPaneClientList;
-    private JScrollPane scrollPaneMessReceived;
+    private JFrame            frmTcpServer;
+    private JTextField        textFieldPort;
+    private JButton           btnInitServer;
+    private JButton           btnCloseServer;
+    private JTextArea         textAreaClientList;
+    private JTextArea         textAreaMessReceived;
+    private JScrollPane       scrollPaneClientList;
+    private JScrollPane       scrollPaneMessReceived;
+    private ServerConnections serverConnections;
 
     /**
      * Launch the application.
@@ -103,6 +104,8 @@ public class GUIServer implements Constants
         textAreaMessReceived.setEnabled(false);
         textAreaMessReceived.setEditable(false);
         
+        serverConnections = new ServerConnections();
+                
         createActions();
     }
     
@@ -141,13 +144,13 @@ public class GUIServer implements Constants
     {
         int     port = -1;
         int     ret = SUCCESS;
-        
+                
         if (textFieldPort.getText().length() != 0)
         {
             port = Integer.parseInt(textFieldPort.getText());
         }
         
-        ret = ServerConnections.initConnection(port);
+        ret = serverConnections.initConnection(this, port);
         
         if (ret == SUCCESS)
         {
@@ -167,7 +170,7 @@ public class GUIServer implements Constants
     
     private void close()
     {
-        ServerConnections.stopConnection();       
+        serverConnections.stopConnection();       
         
         //Turn on components
         btnInitServer.setEnabled(true);
@@ -177,7 +180,7 @@ public class GUIServer implements Constants
         textAreaMessReceived.setEnabled(false);
     }
     
-    public static void updateMessReceived(String str)
+    public void updateMessReceived(String str)
     {
         if (str != null)
         {
@@ -185,7 +188,7 @@ public class GUIServer implements Constants
         }
     }
     
-    public static void updateClientList(String str)
+    public void updateClientList(String str)
     {
         if (str != null)
         {

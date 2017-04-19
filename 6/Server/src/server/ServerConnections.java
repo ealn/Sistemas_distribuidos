@@ -4,23 +4,27 @@ import java.util.ArrayList;
 
 public class ServerConnections implements Constants
 {
-    private static ArrayList<Client> clientList;
-    private static int               count = 0;
+    private ArrayList<Client> clientList;
+    private int               count = 0;
+    private GUIServer         gui = null;
+    private TCPServer         tcpServer = null;
     
-    public static int initConnection(int port)
+    public int initConnection(GUIServer guiServer, int port)
     {
         int         ret;
 
         clientList = new ArrayList<Client>();
         count = 0;
+        gui = guiServer;
+        tcpServer = new TCPServer();
         
-        ret = TCPServer.initServer(port);
+        ret = tcpServer.initServer(port);
         createClient();
 
         return ret;
     }
     
-    public static void stopConnection()
+    public void stopConnection()
     {
         Client  client = null;
         
@@ -31,14 +35,14 @@ public class ServerConnections implements Constants
             client.stopClient();
         }
         
-        TCPServer.closeServer();
+        tcpServer.closeServer();
     }
     
-    private static Client createClient()
+    private Client createClient()
     {
         Client  client = null;
         
-        client = new Client("Client_" + count);
+        client = new Client("Client_" + count, this, tcpServer);
 
         clientList.add(client);
         count++;
@@ -48,7 +52,7 @@ public class ServerConnections implements Constants
         return client;
     }
     
-    private static void removeClient(String name)
+    private void removeClient(String name)
     {
         Client  client = null;
         
@@ -66,7 +70,7 @@ public class ServerConnections implements Constants
         }
     }
     
-    public static void updateClientList(boolean createNewClient)
+    public void updateClientList(boolean createNewClient)
     {
         Client       client = null;
         Client       newClient = null;
@@ -104,14 +108,17 @@ public class ServerConnections implements Constants
         if (!createNewClient)
         {
             //send new list to everyone
-            sentMessageToAll(sendStr.toString(), null);
+            sendToAll(sendStr.toString(), null);
             
             //Update server GUI
-            GUIServer.updateClientList(str.toString());
+            if (gui != null)
+            {
+                gui.updateClientList(str.toString());
+            }
         }
     }
     
-    private static Client getClientByName(String name)
+    private Client getClientByName(String name)
     {
         Client client = null;
         
@@ -131,7 +138,7 @@ public class ServerConnections implements Constants
         return client;
     }
     
-    private static int sentMessageToAll(String message, Client source)
+    private int sendToAll(String message, Client source)
     {
         int ret = SUCCESS;
         Client destination = null;
@@ -152,7 +159,40 @@ public class ServerConnections implements Constants
         return ret;
     }
     
-    private static int sendMessage(String str)
+    private int sendMessageToAll(String str, Client client)
+    {
+        int ret = SUCCESS;
+        
+        if (str != null)
+        {
+            String source = null;
+            String message = null;
+            Client dest = null;
+            Parser parser = new Parser();
+            
+            source = parser.parseString(str, SOURCE);
+            message = parser.parseString(str, MESSAGE);
+            
+            if (source != null
+                && message != null)
+            {
+                sendToAll(SEND + SOURCE + source + MESSAGE + message + SEPARATOR, 
+                          client);
+            }
+            else
+            {
+                ret = FAIL;
+            }
+        }
+        else
+        {
+            ret = FAIL;
+        }
+        
+        return ret;
+    }
+    
+    private int sendMessage(String str)
     {
         int ret = SUCCESS;
         
@@ -163,10 +203,11 @@ public class ServerConnections implements Constants
             String dest = null;
             Client client = null;
             ArrayList <String> destList = null;
+            Parser parser = new Parser();
             
-            source = Parser.parseString(str, SOURCE);
-            message = Parser.parseString(str, MESSAGE);
-            destList = Parser.getListOfParameters(str, DESTINATION);
+            source = parser.parseString(str, SOURCE);
+            message = parser.parseString(str, MESSAGE);
+            destList = parser.getListOfParameters(str, DESTINATION);
             
             if (source != null
                 && message != null
@@ -179,9 +220,12 @@ public class ServerConnections implements Constants
                     if (dest.equals(SERVER))
                     {
                         //Just update the GUI
-                        GUIServer.updateMessReceived(source 
-                                                     + " SEND: "
-                                                     + message);
+                        if (gui != null)
+                        {
+                            gui.updateMessReceived(source 
+                                                   + " SEND: "
+                                                   + message);
+                        }
                     }
                     else
                     {
@@ -212,11 +256,12 @@ public class ServerConnections implements Constants
         return ret;
     }
     
-    public static int messReceived(String str, Client client)
+    public int messReceived(String str, Client client)
     {
         int ret = SUCCESS;
         String substr = null;
         boolean updateList = false;
+        Parser parser = new Parser();
         
         if (str != null)
         {
@@ -226,8 +271,11 @@ public class ServerConnections implements Constants
                 
                 if (ret == SUCCESS)
                 {
-                    GUIServer.updateMessReceived(client.getClientName() 
-                                                 + " connected");
+                    if (gui != null)
+                    {
+                        gui.updateMessReceived(client.getClientName() 
+                                               + " connected");
+                    }
                 }
                 else
                 {
@@ -240,20 +288,17 @@ public class ServerConnections implements Constants
             {
                 ret = CLOSED;
 
-                GUIServer.updateMessReceived(client.getClientName() 
+                if (gui != null)
+                {
+                    gui.updateMessReceived(client.getClientName() 
                                              + " disconnected");
+                }
                 
                 updateList = true;
             }
             else if (str.indexOf(SENDALL) != -1)
-            {
-                substr = Parser.parseString(str, SENDALL);
-                
-                GUIServer.updateMessReceived("SEND TO ALL: " 
-                                             + substr);
-
-                ret = sentMessageToAll(substr, client);
-                
+            {                
+                ret = sendMessageToAll(str, client);                
             }
             else if (str.indexOf(SEND) != -1)
             {
@@ -282,12 +327,13 @@ public class ServerConnections implements Constants
         return ret;
     }
     
-    private static int validateNewClient(String str, Client client)
+    private int validateNewClient(String str, Client client)
     {
         int ret = SUCCESS;
         String clientName = null;
+        Parser parser = new Parser();
         
-        clientName = Parser.parseString(str, USER);
+        clientName = parser.parseString(str, USER);
         
         if (clientName != null
             && !clientName.equals(SERVER)
@@ -304,7 +350,7 @@ public class ServerConnections implements Constants
         return ret;
     }
     
-    private static boolean isClientNameUsed(String name)
+    private boolean isClientNameUsed(String name)
     {
         boolean ret = false;
         

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 
 public class Parser implements Constants
 {
-    public static ArrayList <String> getListOfParameters(String inputStr, String parameter)
+    public ArrayList <String> getListOfParameters(String inputStr, String parameter)
     {
         ArrayList <String>list = null;
         String  subString = null;
@@ -42,7 +42,7 @@ public class Parser implements Constants
         return list;
     }
     
-    public static String parseString(String str, String parameter)
+    public String parseString(String str, String parameter)
     {
         String retStr = null;
         int index = 0;

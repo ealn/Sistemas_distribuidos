@@ -1,15 +1,13 @@
 package client;
 
 import java.util.ArrayList;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.lang.StringBuffer;
 
 public class ClientConnection implements Constants
 {
     private GUIClient             gui = null;
+    private TCPClient             tcpClient = null;
     private Listener              listener = null;
     private String                userName = null;
     private File                  sharedFolder = null;
@@ -18,6 +16,7 @@ public class ClientConnection implements Constants
     public ClientConnection()
     {
         gui = null;
+        tcpClient = null;
         listener = null;
         userName = null;
         sharedFolder = null;
@@ -27,6 +26,7 @@ public class ClientConnection implements Constants
     public ClientConnection(GUIClient guiClient)
     {
         gui = guiClient;
+        tcpClient = null;
         listener = null;
         userName = null;
         sharedFolder = null;
@@ -38,17 +38,18 @@ public class ClientConnection implements Constants
         int     ret = SUCCESS;
         String  retStr = null;
 
-        ret = TCPClient.initConnection(host, port);
+        tcpClient = new TCPClient();
+        ret = tcpClient.initConnection(host, port);
         
         if (ret == SUCCESS)
         {
             //Send hello
-            ret = TCPClient.send(HELLO + USER + user + SEPARATOR);
+            ret = tcpClient.send(HELLO + USER + user + SEPARATOR);
             
             if (ret == SUCCESS)
             {
                 //Wait for an acknowledge
-                retStr = TCPClient.receive();
+                retStr = tcpClient.receive();
                 
                 if (retStr != null)
                 {
@@ -77,7 +78,7 @@ public class ClientConnection implements Constants
         }
         else
         {
-            TCPClient.closeConnection();
+            tcpClient.closeConnection();
         }
         
         return ret;
@@ -86,11 +87,11 @@ public class ClientConnection implements Constants
     public void stopConnection()
     {
         //Send bye
-        TCPClient.send(BYE);
+        tcpClient.send(BYE);
         
         destroyListener();
      
-        TCPClient.closeConnection();
+        tcpClient.closeConnection();
         
         if (gui != null)
         {
@@ -136,7 +137,7 @@ public class ClientConnection implements Constants
     
     private void createListener()
     {
-        listener = new Listener("Listener");
+        listener = new Listener("Listener", this, tcpClient);
         listener.start();
     }
     
@@ -164,7 +165,7 @@ public class ClientConnection implements Constants
             //Add the message
             strBuff.append(MESSAGE + str + SEPARATOR);
             
-            ret = TCPClient.send(strBuff.toString());
+            ret = tcpClient.send(strBuff.toString());
         
             if (ret == FAIL)   
             {
@@ -198,7 +199,7 @@ public class ClientConnection implements Constants
             strBuff.append(MESSAGE + str + SEPARATOR);
             
             //Send message
-            ret = TCPClient.send(strBuff.toString());
+            ret = tcpClient.send(strBuff.toString());
         
             if (ret == FAIL)   
             {

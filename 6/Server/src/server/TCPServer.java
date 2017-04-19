@@ -10,7 +10,7 @@ public class TCPServer implements Constants
     private static DataInputStream   input = null;
     private static DataOutputStream  output = null;
     
-    public static int initServer(int iPort)
+    public int initServer(int iPort)
     {
         int ret = FAIL;
         
@@ -39,7 +39,7 @@ public class TCPServer implements Constants
         return ret;
     }
     
-    public static Socket acceptConnetion()
+    public Socket acceptConnetion()
     {
         Socket clientSocket = null;
         
@@ -58,7 +58,7 @@ public class TCPServer implements Constants
         return clientSocket;
     }
     
-    public static int send(Socket clientSocket, String message)
+    public int send(Socket clientSocket, String message)
     {
         int ret = SUCCESS;
         
@@ -84,7 +84,7 @@ public class TCPServer implements Constants
         return ret;
     }
     
-    public static String receive(Socket clientSocket)
+    public String receive(Socket clientSocket)
     {
         String retStr = null;
         
@@ -109,7 +109,7 @@ public class TCPServer implements Constants
         return retStr;
     }
     
-    public static void closeServer()
+    public void closeServer()
     {
         if (socket != null)
         {
