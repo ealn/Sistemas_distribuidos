@@ -3,10 +3,12 @@ package server;
 public interface Constants 
 {
     public static final int      DEFAULT_PORT =       6789;
+    public static final int      DEFAULT_PORT_DOWN =  6800;
     public static final int      SUCCESS =            0;
     public static final int      FAIL =               -1;
     public static final int      CLOSED =             -2;
     public static final int      USER_ALR_USED =      -3;
+    public static final int      FILE_ALR_DOWN =      -4;
     public static final int      FILES_ONLY =         0;
     public static final int      DIRECTORIES_ONLY =   1;
     public static final String   LOCAL =              "LOCAL";
@@ -31,4 +33,11 @@ public interface Constants
     public static final String   F_SIZE             = SEPARATOR + "FSize" + SEPARATOR;
     public static final String   F_DATE             = SEPARATOR + "FDate" + SEPARATOR;
     public static final String   F_OWNER            = SEPARATOR + "FOwner" + SEPARATOR;
+    public static final String   F_NUMBER_FILES     = SEPARATOR + "FNum" + SEPARATOR;
+    public static final String   CREATE_P2P_SERVER  = SEPARATOR + "P2PServer" + SEPARATOR;
+    public static final String   CREATE_P2P_CLIENT  = SEPARATOR + "P2PClient" + SEPARATOR;
+    public static final String   IP_P2P_SERVER      = SEPARATOR + "IPServer" + SEPARATOR;
+    public static final String   PORT_P2P_SERVER    = SEPARATOR + "PortServer" + SEPARATOR;
+    public static final String   FILE_DOWN          = SEPARATOR + "FileDown" + SEPARATOR;
+    public static final String   SEND_FILE          = SEPARATOR + "SendFile" + SEPARATOR;
 }

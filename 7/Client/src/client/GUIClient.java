@@ -400,6 +400,7 @@ public class GUIClient implements Constants
             textFieldHost.setEditable(false);
             textFieldPort.setEditable(false);
             textFieldUser.setEditable(false);
+            textFieldSharedFolder.setEditable(false);
                     
             textAreaMessSent.setText("");
             textAreaMessReceived.setText("Communication established\n");
@@ -444,6 +445,7 @@ public class GUIClient implements Constants
         textFieldHost.setEditable(true);
         textFieldPort.setEditable(true);  
         textFieldUser.setEditable(true);
+        textFieldSharedFolder.setEditable(true);
     }
     
     private void send()
@@ -476,15 +478,25 @@ public class GUIClient implements Constants
         textAreaMessSent.setText("");
     }
     
-    private void download()
+    private int download()
     {
-        File file = null;
+        int ret = SUCCESS;
+        FileList file = null;
         
         file = getSelectedFileList();
         
         if (file != null)
         {
-            clientConnection.downloadFile(file);
+            ret = clientConnection.downloadFile(file);
+            
+            if (ret == FILE_ALR_DOWN)
+            {
+                //Show error message
+                JOptionPane.showMessageDialog(null,
+                                              "This file is local",
+                                              "Error", 
+                                              JOptionPane.ERROR_MESSAGE);
+            }
         }
         else
         {
@@ -495,6 +507,8 @@ public class GUIClient implements Constants
                                           JOptionPane.ERROR_MESSAGE);
             
         }
+        
+        return ret;
     }
     
     public void updateMessReceived(String str)
@@ -580,14 +594,14 @@ public class GUIClient implements Constants
         }
     }
     
-    private File getSelectedFileList()
+    private FileList getSelectedFileList()
     {
-        File file = null;
+        FileList file = null;
         int row = tableFileList.getSelectedRow();
 
         if (row > 0)
         {
-            file = clientConnection.getFileFromFileList(row);
+            file = clientConnection.getFileListFromIndex(row);
         }
         
         return file;

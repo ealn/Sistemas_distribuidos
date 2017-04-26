@@ -120,4 +120,9 @@ public class Client extends Thread implements Constants
             flist.add(file);
         }
     }
+    
+    public ArrayList <FileList> getFileList()
+    {
+        return flist;
+    }
 }

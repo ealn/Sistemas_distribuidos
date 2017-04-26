@@ -29,13 +29,19 @@ public class ServerConnections implements Constants
         Client  client = null;
         
         //stop listening
-        for (int i = 0; i < clientList.size(); i++)
+        if (clientList != null)
         {
-            client = clientList.get(i);
-            client.stopClient();
+            for (int i = 0; i < clientList.size(); i++)
+            {
+                client = clientList.get(i);
+                client.stopClient();
+            }
         }
         
-        tcpServer.closeServer();
+        if (tcpServer != null)
+        {
+            tcpServer.closeServer();
+        }
     }
     
     private Client createClient()
@@ -138,9 +144,53 @@ public class ServerConnections implements Constants
         return client;
     }
     
-    private int updateFileList(String str, Client source)
+    private int updateFileList()
+    {     
+        int ret = SUCCESS;
+        Client       client = null;
+        StringBuffer sendStr = new StringBuffer();
+        ArrayList <FileList> flistClient = null;
+        
+        sendStr.append(UPDATE_FLIST);
+        
+        for (int i = 0; i < clientList.size(); i++)
+        {
+            client = clientList.get(i);
+            
+            if (client != null
+                && client.isConnected())
+            {
+                flistClient = client.getFileList();
+            
+                if (flistClient != null)
+                {
+                    sendStr.append(F_NUMBER_FILES + flistClient.size());
+                    sendStr.append(F_OWNER + client.getClientName());
+                    
+                    for (int j = 0; j < flistClient.size(); j++)
+                    {
+                        sendStr.append(F_NAME + flistClient.get(j).getFileName());
+                        sendStr.append(F_SIZE + flistClient.get(j).getSize());
+                        sendStr.append(F_DATE + flistClient.get(j).getDate());                        
+                    }
+                }
+            }
+        }
+        
+        sendStr.append(SEPARATOR);
+        
+        if (sendStr != null)
+        {
+            sendToAll(sendStr.toString(), null);
+        }
+        
+        return ret;
+    }
+    
+    private int getFileList(String str, Client source)
     {
         int ret = SUCCESS;
+        
         ArrayList <String> fnames = null;
         ArrayList <String> fsizes = null;
         ArrayList <String> fdates = null;
@@ -154,7 +204,76 @@ public class ServerConnections implements Constants
         
         source.updateFList(fnames.size(), fnames, fsizes, fdates, fowners);
         
-        sendToAll(UPDATE_FLIST + str, source);
+        return ret;
+    }
+    
+    private int getFileToDownload(String str, Client source)
+    {
+        int ret = SUCCESS;
+        Parser parser = new Parser();
+        Client client = null;
+        FileList file = null;
+        ArrayList <FileList> flistClient = null;
+        String fname = null;
+        String fsize = null;
+        String fdate = null;
+        
+        fname = parser.parseString(str, F_NAME);
+        fsize = parser.parseString(str, F_SIZE);
+        fdate = parser.parseString(str, F_DATE);
+        
+        if (fname != null)
+        {
+            //search file in the client list
+            for (int i = 0; i < clientList.size(); i++)
+            {
+                client = clientList.get(i);
+                
+                if (client != null
+                    && client.isConnected())
+                {
+                    flistClient = client.getFileList();
+                
+                    if (flistClient != null)
+                    {
+                        //search in the list of files for this client
+                        for (int j = 0; j < flistClient.size(); j++)
+                        {
+                            if (fname.equals(flistClient.get(j).getFileName())
+                                && Integer.parseInt(fsize) == flistClient.get(j).getSize()
+                                && fdate.equals(flistClient.get(j).getDate()))
+                            {
+                                file = flistClient.get(j);
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                if (file != null)
+                {
+                    break;
+                }
+            }
+            
+            if (file != null)
+            {
+                //File found 
+                
+                //Send the Request to create a Peer to Peer Server
+                client.send(CREATE_P2P_SERVER + FILE_DOWN + fname + SEPARATOR);
+                
+                //Send the Request to create a Peer to Peer Client
+                source.send(CREATE_P2P_CLIENT 
+                            + IP_P2P_SERVER 
+                            + client.getAddress()
+                            + SEPARATOR);            
+            }
+        }
+        else
+        {
+            ret = FAIL;
+        }
         
         return ret;
     }
@@ -188,7 +307,6 @@ public class ServerConnections implements Constants
         {
             String source = null;
             String message = null;
-            Client dest = null;
             Parser parser = new Parser();
             
             source = parser.parseString(str, SOURCE);
@@ -282,6 +400,7 @@ public class ServerConnections implements Constants
         int ret = SUCCESS;
         String substr = null;
         boolean updateList = false;
+        boolean updateFList = false;
         Parser parser = new Parser();
         
         if (str != null)
@@ -316,6 +435,7 @@ public class ServerConnections implements Constants
                 }
                 
                 updateList = true;
+                updateFList = true;
             }
             else if (str.indexOf(SENDALL) != -1)
             {                
@@ -327,7 +447,12 @@ public class ServerConnections implements Constants
             }
             else if (str.indexOf(SEND_FLIST) != -1)
             {
-                ret = updateFileList(str, client);
+                ret = getFileList(str, client);
+                updateFList = true;
+            }
+            else if (str.indexOf(DOWNLOAD_FILE) != -1)
+            {
+                ret = getFileToDownload(str, client);
             }
         }
         else
@@ -347,6 +472,10 @@ public class ServerConnections implements Constants
         if (updateList)
         {
             updateClientList(false);
+        }
+        if (updateFList)
+        {
+            updateFileList();
         }
         
         return ret;

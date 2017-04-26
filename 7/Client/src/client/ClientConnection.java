@@ -33,6 +33,11 @@ public class ClientConnection implements Constants
         sharedFolder = null;
         flist = null;
     }
+    
+    public File getSharedFolder()
+    {
+        return sharedFolder;
+    }
 
     public int initConnection(String host, int port, String user, File shFolder)
     {
@@ -76,6 +81,7 @@ public class ClientConnection implements Constants
         {
             createListener();
             createFileList();
+            sendFileList();
         }
         else
         {
@@ -88,12 +94,18 @@ public class ClientConnection implements Constants
     public void stopConnection()
     {
         //Send bye
-        tcpClient.send(BYE);
+        if (tcpClient != null)
+        {
+            tcpClient.send(BYE);
+        }
         
         destroyListener();
      
-        tcpClient.closeConnection();
-        
+        if (tcpClient != null)
+        {
+            tcpClient.closeConnection();
+        }
+            
         if (gui != null)
         {
             gui.updateClientList(null);
@@ -126,14 +138,6 @@ public class ClientConnection implements Constants
                     flist.add(file);
                 }
             }
-            
-            sendFileList();
-            
-            if (gui != null)
-            {
-                //update GUI file list
-                gui.updateFileList(flist);
-            }
         }      
     }
     
@@ -156,8 +160,8 @@ public class ClientConnection implements Constants
             if (file.getOwner().equals(LOCAL))
             {
                 strBuff.append(F_NAME + file.getFileName() + SEPARATOR);
-                strBuff.append(F_SIZE + file.getFileName() + SEPARATOR);
-                strBuff.append(F_DATE + file.getFileName() + SEPARATOR);
+                strBuff.append(F_SIZE + file.getSize() + SEPARATOR);
+                strBuff.append(F_DATE + file.getDate() + SEPARATOR);
                 strBuff.append(F_OWNER + userName + SEPARATOR);
             }
         }
@@ -175,37 +179,64 @@ public class ClientConnection implements Constants
     private int updateFileList(String str)
     {
         int ret = SUCCESS;
-        FileList file = null;
-        int numberOfFiles = 0;
-        ArrayList <String> fnames = null;
-        ArrayList <String> fsizes = null;
-        ArrayList <String> fdates = null;
-        Parser parser = new Parser();
         
-        fnames = parser.getListOfParameters(str, F_NAME);
-        fsizes = parser.getListOfParameters(str, F_SIZE);
-        fdates = parser.getListOfParameters(str, F_DATE);
-
-        numberOfFiles = fnames.size();
+        createFileList();
         
-        if (numberOfFiles > 0)
+        if (str != null)
         {
-            for (int i = 0; i < numberOfFiles; i++)
-            {
-                file = new FileList();
-                file.setFileName(fnames.get(i));
-                file.setSize(Integer.parseInt(fsizes.get(i)));
-                file.setDate(fdates.get(i));
-                file.setOwner(NET);
-                flist.add(file);
-            }
+            FileList file = null;
+            int numFiles = 0;
+            int j = 0;
+            int i = 0;
+            ArrayList <String> numberOfFiles = null;
+            ArrayList <String> fnames = null;
+            ArrayList <String> fsizes = null;
+            ArrayList <String> fdates = null;
+            ArrayList <String> fowners = null;
+            Parser parser = new Parser();
+        
+            numberOfFiles = parser.getListOfParameters(str, F_NUMBER_FILES);
+            fowners = parser.getListOfParameters(str, F_OWNER);
+            fnames = parser.getListOfParameters(str, F_NAME);
+            fsizes = parser.getListOfParameters(str, F_SIZE);
+            fdates = parser.getListOfParameters(str, F_DATE);
             
-            if (gui != null)
+            if (numberOfFiles != null)
             {
-                //update GUI file list
-                gui.updateFileList(flist);
+                //search by owners
+                for (i = 0; i < fowners.size(); i++)
+                {    
+                     numFiles += Integer.parseInt(numberOfFiles.get(i));
+                    
+                     if (!fowners.get(i).equals(userName))
+                     {  
+                         //Add files of this owner
+                         while (j < numFiles)
+                         {
+                             file = new FileList();
+                           
+                             file.setFileName(fnames.get(j));
+                             file.setSize(Integer.parseInt(fsizes.get(j)));
+                             file.setDate(fdates.get(j));
+                             file.setOwner(NET);
+                            
+                             flist.add(file);
+                             j++;
+                         }
+                     }
+                     else
+                     {
+                         j = numFiles;
+                     }
+                }
+            
+                if (gui != null)
+                {
+                     //update GUI file list
+                     gui.updateFileList(flist);
+                }
             }
-        }        
+        }
         
         return ret;
     }
@@ -320,6 +351,14 @@ public class ClientConnection implements Constants
             {
                 ret = updateFileList(str);
             }
+            else if (str.indexOf(CREATE_P2P_SERVER) != -1)
+            {
+                ret = createP2PServer(str);
+            }
+            else if (str.indexOf(CREATE_P2P_CLIENT) != -1)
+            {
+                ret = createP2PClient(str);
+            }
             else //Message was received
             {
                 source = parser.parseString(str, SOURCE);
@@ -348,35 +387,119 @@ public class ClientConnection implements Constants
         return ret;
     }
     
-    public File getFileFromFileList(int index)
+    public FileList getFileListFromIndex(int index)
     {
-        File file = null;
+        FileList file = null;
         
         if (flist != null
             && index > 0)
         {
-            file = flist.get(index).getFile();
+            file = flist.get(index);
         }
         
         return file;
     }
     
-    public int downloadFile(File file)
+    public FileList getFileListFromName(String name)
+    {
+        FileList file = null;
+        
+        if (flist != null
+            && name != null)
+        {
+            for (int i = 0; i < flist.size(); i++)
+            {
+                if (flist.get(i).getOwner().equals(LOCAL)
+                    && flist.get(i).getFileName().equals(name))
+                {
+                    file = flist.get(i);
+                }
+            }
+        }
+        
+        return file;
+    }
+    
+    public int downloadFile(FileList file)
     {
         int ret = SUCCESS;
         
         if (file != null)
         {
-            String serStr = null;
-            
-            SerializeFile serFile = new SerializeFile();
-            
-            serStr = serFile.serializeAsString(file);
+            if (file.getOwner().equals(NET))
+            {
+                StringBuffer strBuff = new StringBuffer();
+                
+                //Send request                
+                strBuff.append(DOWNLOAD_FILE); 
+                
+                strBuff.append(F_NAME + file.getFileName() + SEPARATOR);
+                strBuff.append(F_SIZE + file.getSize() + SEPARATOR);
+                strBuff.append(F_DATE + file.getDate() + SEPARATOR);
+                strBuff.append(F_OWNER + NET + SEPARATOR);
+                
+                ret = tcpClient.send(strBuff.toString());
+                
+                if (ret == FAIL)   
+                {
+                    System.out.println("Send failed");
+                }
+            }
+            else
+            {
+                ret = FILE_ALR_DOWN;
+            }
         }
         else
         {
             ret = FAIL;
         }
+        
+        return ret;
+    }
+    
+    private int createP2PServer(String str)
+    {
+        int ret = SUCCESS;
+        PeerToPeerServer p2pServer = null;
+        String fname = null;
+        FileList fileToSend = null;
+        Parser parser = new Parser();
+        
+        fname = parser.parseString(str, FILE_DOWN);
+        fileToSend = getFileListFromName(fname);
+        
+        if (fileToSend != null)
+        {
+           p2pServer = new PeerToPeerServer("P2PServer", fileToSend);    
+           p2pServer.start();
+        }
+        else
+        {
+            ret = FAIL;
+        }
+        
+        return ret;
+    }
+    
+    private int createP2PClient(String str)
+    {
+        int ret = SUCCESS;
+        PeerToPeerClient p2pClient = null;
+        String host = null;
+        Parser parser = new Parser();
+        
+        host = parser.parseString(str, IP_P2P_SERVER);
+        
+        if (host != null)
+        {
+            p2pClient = new PeerToPeerClient("P2PClient", host, this);    
+            p2pClient.start();
+        }
+        else
+        {
+            ret = FAIL;
+        }        
         
         return ret;
     }
