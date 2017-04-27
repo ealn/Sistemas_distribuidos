@@ -28,6 +28,7 @@ public class TCPClient implements Constants
             
             host = InetAddress.getByName(iHost);
             socket = new Socket(host, port);
+            socket.setKeepAlive( true );
             
             ret = SUCCESS;
         }
@@ -65,6 +66,32 @@ public class TCPClient implements Constants
         return ret;
     }
     
+    public int sendBytes(byte[] bytes)
+    {
+        int ret = SUCCESS;
+        
+        if (socket != null
+            && bytes != null)
+        {
+            try 
+            {
+                //send info
+                output = new DataOutputStream(socket.getOutputStream());
+                output.write(bytes);
+            } 
+            catch (IOException e) 
+            {
+                System.out.println("send() IO Exception: " + e.getMessage());
+            }
+        }
+        else
+        {
+            ret = FAIL;
+        }
+        
+        return ret;
+    }
+    
     public String receive()
     {
         String retStr = null;
@@ -84,6 +111,32 @@ public class TCPClient implements Constants
         }
         
         return retStr;
+    }
+    
+    public byte[] receiveBytes()
+    {
+        byte[] retByteArray = null;
+        
+        if (socket != null)
+        {
+            try 
+            {
+                //receive info
+                input = new DataInputStream(socket.getInputStream());
+                
+                if (input != null)
+                {
+                    retByteArray = new byte[8192];
+                    input.read(retByteArray);
+                }
+            } 
+            catch (IOException e) 
+            {
+                System.out.println("receive() IO Exception: " + e.getMessage());
+            }
+        }
+        
+        return retByteArray;
     }
     
     public void closeConnection()

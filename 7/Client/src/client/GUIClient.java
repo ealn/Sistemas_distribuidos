@@ -606,4 +606,12 @@ public class GUIClient implements Constants
         
         return file;
     }
+    
+    public void showDownloadMessageDialog()
+    {
+        JOptionPane.showMessageDialog(null,
+                                      "File successfully downloaded",
+                                      "", 
+                                      JOptionPane.INFORMATION_MESSAGE);
+    }
 }

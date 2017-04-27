@@ -80,8 +80,7 @@ public class ClientConnection implements Constants
         if (ret == SUCCESS)
         {
             createListener();
-            createFileList();
-            sendFileList();
+            updateLocalFileList();
         }
         else
         {
@@ -111,6 +110,20 @@ public class ClientConnection implements Constants
             gui.updateClientList(null);
             gui.updateFileList(null);
         }
+    }
+    
+    public void showDownloadMessage()
+    {
+        if (gui != null)
+        {
+            gui.showDownloadMessageDialog();
+        }
+    }
+    
+    public void updateLocalFileList()
+    {
+        createFileList();
+        sendFileList();
     }
     
     private void createFileList()

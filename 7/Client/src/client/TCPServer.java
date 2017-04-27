@@ -84,6 +84,32 @@ public class TCPServer implements Constants
         return ret;
     }
     
+    public int sendBytes(Socket clientSocket, byte[] bytes)
+    {
+        int ret = SUCCESS;
+        
+        if (clientSocket != null
+            && bytes != null)
+        {
+            try 
+            {
+                //send info
+                output = new DataOutputStream(clientSocket.getOutputStream());
+                output.write(bytes, 0, bytes.length);
+            } 
+            catch (IOException e) 
+            {
+                System.out.println("send() IO Exception: " + e.getMessage());
+            }
+        }
+        else
+        {
+            ret = FAIL;
+        }
+        
+        return ret;
+    }
+    
     public String receive(Socket clientSocket)
     {
         String retStr = null;
@@ -107,6 +133,32 @@ public class TCPServer implements Constants
         }
         
         return retStr;
+    }
+    
+    public byte[] receiveBytes(Socket clientSocket)
+    {
+        byte[] retByteArray = null;
+        
+        if (clientSocket != null)
+        { 
+            try 
+            {
+                //receive info
+                input = new DataInputStream(clientSocket.getInputStream());
+
+                if (input != null)
+                {
+                    retByteArray = new byte[8192];
+                    input.read(retByteArray);
+                }
+            } 
+            catch (IOException e) 
+            {
+                System.out.println("receive() IO Exception: " + e.getMessage());
+            }
+        }
+        
+        return retByteArray;
     }
     
     public void closeServer()
