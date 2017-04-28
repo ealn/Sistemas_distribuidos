@@ -32,6 +32,14 @@ public class PeerToPeerClient extends Thread implements Constants
         long   n = 0;
         long   i = 0;
         
+        try 
+        {
+            Thread.sleep(300);
+        } 
+        catch (InterruptedException e1) {
+            System.out.println("PeerToPeerClient " + e1.getMessage());
+        }
+        
         tcpClient.initConnection(host, DEFAULT_PORT_DOWN);
         
         //get file name

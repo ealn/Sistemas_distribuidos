@@ -399,7 +399,7 @@ public class ServerConnections implements Constants
         {
             if (str.indexOf(HELLO) != -1)
             {
-                ret = validateNewClient(str, client);
+                ret = join(str, client);
                 
                 if (ret == SUCCESS)
                 {
@@ -473,7 +473,7 @@ public class ServerConnections implements Constants
         return ret;
     }
     
-    private int validateNewClient(String str, Client client)
+    private int join(String str, Client client)
     {
         int ret = SUCCESS;
         String clientName = null;
