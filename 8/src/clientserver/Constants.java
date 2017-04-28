@@ -40,4 +40,10 @@ public interface Constants
     public static final String   PORT_P2P_SERVER    = SEPARATOR + "PortServer" + SEPARATOR;
     public static final String   FILE_DOWN          = SEPARATOR + "FileDown" + SEPARATOR;
     public static final String   SEND_FILE          = SEPARATOR + "SendFile" + SEPARATOR;
+    public static final String   SUBSCRIBE          = SEPARATOR + "Subs" + SEPARATOR;
+    public static final String   PUBLISH            = SEPARATOR + "Publ" + SEPARATOR;
+    public static final String   SUBSCRIBE_VIDEO    = SEPARATOR + "SubVideo" + SEPARATOR;
+    public static final String   SUBSCRIBE_MUSIC    = SEPARATOR + "SubMusic" + SEPARATOR;
+    public static final String   SUBSCRIBE_DOCS     = SEPARATOR + "SubDocs" + SEPARATOR;
+    public static final String   SUBSCRIBE_ALL      = SEPARATOR + "SubAll" + SEPARATOR;
 }

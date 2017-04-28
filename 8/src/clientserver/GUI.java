@@ -18,13 +18,14 @@ import javax.swing.JTextArea;
 import javax.swing.JScrollPane;
 import javax.swing.JList;
 import javax.swing.JTable;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JCheckBox;
 
 public class GUI implements Constants
 {
 
     private JFrame                      frmTcpClient;
     private JTextField                  textFieldHost;
-    private JTextField                  textFieldPort;
     private JTextField                  textFieldUser;
     private JTextField                  textFieldSharedFolder;
     private JTextArea                   textAreaMessSent;
@@ -37,11 +38,16 @@ public class GUI implements Constants
     private JButton                     btnDownloadFile;
     private JButton                     btnInitServer;
     private JButton                     btnCloseServer;
+    private JButton                     btnSubscribe;
     private JList                       listClientList;
     private DefaultListModel <String>   modelClientList;
     private JTable                      tableFileList;
     private DefaultTableModel           tableModelFileList;
     private ClientConnection            clientConnection;
+    private JCheckBox                   chckbxVideo;
+    private JCheckBox                   chckbxMusic;
+    private JCheckBox                   chckbxDocs;
+    private JCheckBox                   chckbxAll;
     private boolean                     serverOnline = false;
         
     /**
@@ -93,19 +99,10 @@ public class GUI implements Constants
         lblHost.setBounds(10, 11, 46, 14);
         frmTcpClient.getContentPane().add(lblHost);
         
-        JLabel lblPort = new JLabel("Port");
-        lblPort.setBounds(10, 36, 46, 14);
-        frmTcpClient.getContentPane().add(lblPort);
-        
         textFieldHost = new JTextField();
         textFieldHost.setBounds(38, 8, 133, 20);
         frmTcpClient.getContentPane().add(textFieldHost);
         textFieldHost.setColumns(10);
-        
-        textFieldPort = new JTextField();
-        textFieldPort.setBounds(38, 33, 133, 20);
-        frmTcpClient.getContentPane().add(textFieldPort);
-        textFieldPort.setColumns(10);
         
         JLabel lblMessSent = new JLabel("Message Sent");
         lblMessSent.setBounds(10, 395, 161, 14);
@@ -152,7 +149,7 @@ public class GUI implements Constants
         frmTcpClient.getContentPane().add(lblClientList);
         
         JScrollPane scrollPaneClientList = new JScrollPane();
-        scrollPaneClientList.setBounds(295, 34, 261, 118);
+        scrollPaneClientList.setBounds(295, 34, 191, 118);
         frmTcpClient.getContentPane().add(scrollPaneClientList);
         
         modelClientList = new DefaultListModel<>();
@@ -162,11 +159,11 @@ public class GUI implements Constants
         scrollPaneClientList.setViewportView(listClientList);
         
         JLabel lblUser = new JLabel("User");
-        lblUser.setBounds(10, 61, 46, 14);
+        lblUser.setBounds(10, 36, 46, 14);
         frmTcpClient.getContentPane().add(lblUser);
         
         textFieldUser = new JTextField();
-        textFieldUser.setBounds(38, 61, 133, 20);
+        textFieldUser.setBounds(38, 33, 133, 20);
         frmTcpClient.getContentPane().add(textFieldUser);
         textFieldUser.setColumns(10);
         
@@ -216,6 +213,35 @@ public class GUI implements Constants
         btnCloseServer.setBounds(181, 83, 110, 23);
         frmTcpClient.getContentPane().add(btnCloseServer);
         btnCloseServer.setEnabled(false);
+        
+        JLabel lblSubscribe = new JLabel("Subscribe");
+        lblSubscribe.setBounds(521, 11, 119, 14);
+        frmTcpClient.getContentPane().add(lblSubscribe);
+        
+        btnSubscribe = new JButton("Subscribe");
+        btnSubscribe.setBounds(517, 151, 104, 23);
+        frmTcpClient.getContentPane().add(btnSubscribe);
+        btnSubscribe.setEnabled(false);
+        
+        chckbxVideo = new JCheckBox("Video");
+        chckbxVideo.setBounds(524, 32, 97, 23);
+        frmTcpClient.getContentPane().add(chckbxVideo);
+        chckbxVideo.setEnabled(false);
+        
+        chckbxMusic = new JCheckBox("Music");
+        chckbxMusic.setBounds(524, 57, 97, 23);
+        frmTcpClient.getContentPane().add(chckbxMusic);
+        chckbxMusic.setEnabled(false);
+        
+        chckbxDocs = new JCheckBox("Docs");
+        chckbxDocs.setBounds(524, 83, 97, 23);
+        frmTcpClient.getContentPane().add(chckbxDocs);
+        chckbxDocs.setEnabled(false);
+        
+        chckbxAll = new JCheckBox("All");
+        chckbxAll.setBounds(524, 110, 97, 23);
+        frmTcpClient.getContentPane().add(chckbxAll);
+        chckbxAll.setEnabled(false);
         
         clientConnection = new ClientConnection(this);
                 
@@ -393,6 +419,15 @@ public class GUI implements Constants
               closeServer();
           }
         });
+        
+        //Subscribe
+        btnSubscribe.addActionListener(new ActionListener() 
+        {
+          public void actionPerformed(ActionEvent e) 
+          {
+              closeServer();
+          }
+        });
     }
     
     private void connect()
@@ -402,11 +437,6 @@ public class GUI implements Constants
         File   sharedFolder = new File(textFieldSharedFolder.getText());
         int    port = -1;
         int    ret = SUCCESS;
-        
-        if (textFieldPort.getText().length() != 0)
-        {
-            port = Integer.parseInt(textFieldPort.getText());
-        }
         
         ret = clientConnection.initConnection(host, port, user, sharedFolder);
         
@@ -422,15 +452,19 @@ public class GUI implements Constants
             btnDisconnect.setEnabled(true);
             btnSend.setEnabled(true);
             btnSendToAll.setEnabled(true);
+            btnSubscribe.setEnabled(true);
             btnDownloadFile.setEnabled(true);
             listClientList.setEnabled(true);
             tableFileList.setEnabled(true);
+            chckbxVideo.setEnabled(true);
+            chckbxMusic.setEnabled(true);
+            chckbxDocs.setEnabled(true);
+            chckbxAll.setEnabled(true);
                     
             textAreaMessSent.setEnabled(true);
             textAreaMessReceived.setEnabled(true);
                     
             textFieldHost.setEditable(false);
-            textFieldPort.setEditable(false);
             textFieldUser.setEditable(false);
             textFieldSharedFolder.setEditable(false);
                     
@@ -469,14 +503,18 @@ public class GUI implements Constants
         btnSend.setEnabled(false);
         btnSendToAll.setEnabled(false);
         btnDownloadFile.setEnabled(false);
+        btnSubscribe.setEnabled(false);
         listClientList.setEnabled(false);
         tableFileList.setEnabled(false);
+        chckbxVideo.setEnabled(false);
+        chckbxMusic.setEnabled(false);
+        chckbxDocs.setEnabled(false);
+        chckbxAll.setEnabled(false);
         
         textAreaMessSent.setEnabled(false);
         textAreaMessReceived.setEnabled(false);
         
-        textFieldHost.setEditable(true);
-        textFieldPort.setEditable(true);  
+        textFieldHost.setEditable(true);  
         textFieldUser.setEditable(true);
         textFieldSharedFolder.setEditable(true);
     }
@@ -680,6 +718,17 @@ public class GUI implements Constants
             btnCloseServer.setEnabled(false);
             btnInitServer.setEnabled(true);
             serverOnline = false;
+        }
+    }
+    
+    public void subscribe()
+    {
+        if (clientConnection != null)
+        {
+            clientConnection.subscribe(chckbxVideo.isSelected(), 
+                                       chckbxMusic.isSelected(), 
+                                       chckbxMusic.isSelected(), 
+                                       chckbxMusic.isSelected());
         }
     }
 }

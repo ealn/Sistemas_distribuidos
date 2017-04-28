@@ -555,4 +555,9 @@ public class ClientConnection implements Constants
         
         return ret;
     }
+    
+    public void subscribe(boolean video, boolean music, boolean docs, boolean all)
+    {
+        
+    }
 }
