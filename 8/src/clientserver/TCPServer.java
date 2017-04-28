@@ -10,6 +10,11 @@ public class TCPServer implements Constants
     private static DataInputStream   input = null;
     private static DataOutputStream  output = null;
     
+    public ServerSocket getServerSocket()
+    {
+        return socket;
+    }
+    
     public int initServer(int iPort)
     {
         int ret = FAIL;

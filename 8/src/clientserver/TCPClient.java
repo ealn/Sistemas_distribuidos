@@ -11,6 +11,11 @@ public class TCPClient implements Constants
     private DataInputStream   input = null;
     private DataOutputStream  output = null;
     
+    public Socket getSocket()
+    {
+        return socket;
+    }
+    
     public int initConnection(String iHost, int iPort)
     {
         int ret = FAIL;

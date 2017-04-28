@@ -536,7 +536,16 @@ public class ClientConnection implements Constants
         
         if (host != null)
         {
-            p2pClient = new PeerToPeerClient("P2PClient", host, this);    
+            if (host.equals("127.0.0.1")) //localhost
+            {
+                //use the address of the socket for this client
+                p2pClient = new PeerToPeerClient("P2PClient", tcpClient.getSocket().getInetAddress().getHostAddress(), this);
+            }
+            else
+            {
+                p2pClient = new PeerToPeerClient("P2PClient", host, this);
+            }
+            
             p2pClient.start();
         }
         else
