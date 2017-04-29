@@ -18,7 +18,6 @@ import javax.swing.JTextArea;
 import javax.swing.JScrollPane;
 import javax.swing.JList;
 import javax.swing.JTable;
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JCheckBox;
 
 public class GUI implements Constants
@@ -631,10 +630,7 @@ public class GUI implements Constants
     {
         if (tableModelFileList != null)
         {
-            for (int i = tableModelFileList.getRowCount() - 1; i >= 0; i--)
-            {
-                tableModelFileList.removeRow(i);
-            }
+            tableModelFileList.getDataVector().removeAllElements();
         }
     }
     

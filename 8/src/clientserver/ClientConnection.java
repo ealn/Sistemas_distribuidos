@@ -7,13 +7,14 @@ import java.lang.StringBuffer;
 
 public class ClientConnection implements Constants
 {
-    private GUI             gui = null;
+    private GUI                   gui = null;
     private TCPClient             tcpClient = null;
     private Listener              listener = null;
     private String                userName = null;
     private File                  sharedFolder = null;
     private ArrayList <FileList>  flist = null;
     private ServerConnections     server = null;
+    private FileListUpdater       updater = null;
     
     public ClientConnection()
     {
@@ -82,6 +83,7 @@ public class ClientConnection implements Constants
         {
             createListener();
             updateLocalFileList();
+            createFileListUpdater();
         }
         else
         {
@@ -100,6 +102,7 @@ public class ClientConnection implements Constants
         }
         
         destroyListener();
+        destroyFileListUpdater();
      
         if (tcpClient != null)
         {
@@ -152,16 +155,22 @@ public class ClientConnection implements Constants
     
     public void updateLocalFileList()
     {
-        createFileList();
-        sendFileList();
+        flist = createFileList();
+        
+        if (flist != null)
+        {
+            sendFileList();
+        }
     }
     
-    private void createFileList()
+    public ArrayList <FileList> createFileList()
     {
+        ArrayList <FileList> fileList = null;
+        
         if (sharedFolder != null)
         {
             File[] files = sharedFolder.listFiles();
-            flist = new ArrayList<>();
+            fileList = new ArrayList<>();
             FileList file = null;
             
             //Local resources
@@ -178,52 +187,56 @@ public class ClientConnection implements Constants
                     file.setOwner(LOCAL);
                     file.setFile(files[i]);
                 
-                    flist.add(file);
+                    fileList.add(file);
                 }
             }
-        }      
+        }
+        
+        return fileList;
     }
     
     private int sendFileList()
     {
         int ret = SUCCESS;
-        StringBuffer strBuff = null;
-        FileList     file = null;
         
-        strBuff = new StringBuffer(SEND_FLIST);
-        
-        //Add source
-        strBuff.append(SOURCE + userName); 
-        
-        //Add the list
-        for (int i = 0; i < flist.size(); i++)
+        if (flist != null)
         {
-            file = flist.get(i);
-            
-            if (file.getOwner().equals(LOCAL))
+            StringBuffer strBuff = null;
+            FileList     file = null;
+        
+            strBuff = new StringBuffer(SEND_FLIST);
+        
+            //Add source
+            strBuff.append(SOURCE + userName); 
+        
+            //Add the list
+            for (int i = 0; i < flist.size(); i++)
             {
-                strBuff.append(F_NAME + file.getFileName() + SEPARATOR);
-                strBuff.append(F_SIZE + file.getSize() + SEPARATOR);
-                strBuff.append(F_DATE + file.getDate() + SEPARATOR);
-                strBuff.append(F_OWNER + userName + SEPARATOR);
+                file = flist.get(i);
+            
+                if (file.getOwner().equals(LOCAL))
+                {
+                    strBuff.append(F_NAME + file.getFileName() + SEPARATOR);
+                    strBuff.append(F_SIZE + file.getSize() + SEPARATOR);
+                    strBuff.append(F_DATE + file.getDate() + SEPARATOR);
+                    strBuff.append(F_OWNER + userName + SEPARATOR);
+                }
             }
-        }
         
-        ret = tcpClient.send(strBuff.toString());
+            ret = tcpClient.send(strBuff.toString());
     
-        if (ret == FAIL)   
-        {
-            System.out.println("Send failed");
+            if (ret == FAIL)   
+            {
+                System.out.println("Send failed");
+            }
         }
         
         return ret;
     }
     
-    private int updateFileList(String str)
+    private ArrayList<FileList> getNetworkResources(String str)
     {
-        int ret = SUCCESS;
-        
-        createFileList();
+        ArrayList<FileList> netList = null;
         
         if (str != null)
         {
@@ -263,7 +276,12 @@ public class ClientConnection implements Constants
                              file.setDate(fdates.get(j));
                              file.setOwner(NET);
                             
-                             flist.add(file);
+                             if (netList == null)
+                             {
+                                 netList = new ArrayList<FileList>();
+                             }
+                             
+                             netList.add(file);
                              j++;
                          }
                      }
@@ -272,15 +290,31 @@ public class ClientConnection implements Constants
                          j = numFiles;
                      }
                 }
-            
-                if (gui != null)
-                {
-                     //update GUI file list
-                     gui.updateFileList(flist);
-                }
             }
         }
         
+        return netList;
+    }
+    
+    private int updateFileList(String str)
+    {
+        int ret = SUCCESS;
+        ArrayList<FileList> netList = null;
+        
+        flist = createFileList();
+        netList = getNetworkResources(str);
+        
+        if (flist != null)
+        {
+            flist.get(0).mergeList(flist, netList);
+            
+            if (gui != null)
+            {
+                 //update GUI file list
+                 gui.updateFileList(flist);
+            }
+        }
+
         return ret;
     }
     
@@ -296,6 +330,21 @@ public class ClientConnection implements Constants
         {
             //stop listening
             listener.closeListener();
+        }
+    }
+    
+    private void createFileListUpdater()
+    {
+        updater = new FileListUpdater("Updater", this);
+        updater.start();
+    }
+    
+    private void destroyFileListUpdater()
+    {
+        if (updater != null)
+        {
+            //stop updater
+            updater.closeUpdater();
         }
     }
     
