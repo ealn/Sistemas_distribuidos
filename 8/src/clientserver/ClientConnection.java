@@ -451,6 +451,10 @@ public class ClientConnection implements Constants
             {
                 ret = createP2PClient(str);
             }
+            else if (str.indexOf(PUBLISH) != -1)
+            {
+                ret = publish(str);
+            }
             else //Message was received
             {
                 source = parser.parseString(str, SOURCE);
@@ -605,8 +609,74 @@ public class ClientConnection implements Constants
         return ret;
     }
     
-    public void subscribe(boolean video, boolean music, boolean docs, boolean all)
+    public int subscribe(boolean video, boolean music, boolean docs, boolean all)
     {
+        int ret = SUCCESS;
+        StringBuffer strBuff = null;
         
+        if (video || music || docs || all)
+        {
+            strBuff = new StringBuffer(SUBSCRIBE);
+            
+            //Add subscribe modules
+            if (video)
+            {
+                strBuff.append(SUBSCRIBE_VIDEO + 1); 
+            }
+            if (music)
+            {
+                strBuff.append(SUBSCRIBE_MUSIC + 1); 
+            }
+            if (docs)
+            {
+                strBuff.append(SUBSCRIBE_DOCS + 1); 
+            }
+            if (all)
+            {
+                strBuff.append(SUBSCRIBE_ALL + 1); 
+            }
+            
+            //Add the message
+            strBuff.append(SEPARATOR);
+            
+            ret = tcpClient.send(strBuff.toString());
+        
+            if (ret == FAIL)   
+            {
+                System.out.println("Send failed");
+            }
+        }
+        
+        return ret;
+    }
+    
+    public int publish(String str)
+    {
+        int ret = SUCCESS;
+        
+        if (str != null)
+        {
+            Parser parser = new Parser();
+            ArrayList <String>list = null;
+            
+            list = parser.getListOfParameters(str, MESSAGE);
+        
+            if (list != null)
+            {
+                if (gui != null)
+                {
+                    for (int i = 0; i < list.size(); i++)
+                    {
+                        gui.updateMessReceived(list.get(i));
+                    }
+                }
+            }
+        }
+        else
+        {
+            ret = FAIL;
+        }
+        
+        return ret;
     }
 }

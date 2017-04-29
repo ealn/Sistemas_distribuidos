@@ -4,10 +4,11 @@ import java.util.ArrayList;
 
 public class ServerConnections implements Constants
 {
-    private ArrayList<Client> clientList;
-    private int               count = 0;
-    private GUI         gui = null;
-    private TCPServer         tcpServer = null;
+    private ArrayList<Client>     clientList;
+    private int                   count = 0;
+    private GUI                   gui = null;
+    private TCPServer             tcpServer = null;
+    private ArrayList <FileList>  flist = null;
     
     public int initConnection(GUI guiClient, int port)
     {
@@ -138,6 +139,42 @@ public class ServerConnections implements Constants
         return client;
     }
     
+    private ArrayList <FileList> getFileList()
+    {
+        ArrayList <FileList> list = null;
+        ArrayList <FileList> clientlist = null;
+        FileList             file = null;
+        Client               client = null;
+
+        for (int i = 0; i < clientList.size(); i++)
+        {
+            client = clientList.get(i);
+            
+            if (client != null
+                && client.isConnected())
+            {
+                if (list == null)
+                {
+                    list = new ArrayList <FileList>();
+                }
+                
+                clientlist = client.getFileList();
+                
+                for (int j = 0; j < clientlist.size(); j++)
+                {
+                    file = clientlist.get(j);
+                    
+                    if (file != null)
+                    {
+                        list.add(file);
+                    }
+                }
+            }
+        }
+        
+        return list;
+    }
+    
     private int updateFileList()
     {     
         int ret = SUCCESS;
@@ -176,6 +213,7 @@ public class ServerConnections implements Constants
         if (sendStr != null)
         {
             sendToAll(sendStr.toString(), null);
+            publish();
         }
         
         return ret;
@@ -267,6 +305,89 @@ public class ServerConnections implements Constants
         else
         {
             ret = FAIL;
+        }
+        
+        return ret;
+    }
+    
+    public int subscribe(String str, Client source)
+    {
+        int ret = SUCCESS;
+        
+        if (str != null)
+        {
+            boolean video = false;
+            boolean music = false;
+            boolean docs = false;
+            boolean all = false;
+            String videoStr;
+            String musicStr;
+            String docsStr;
+            String allStr;
+            Parser parser = new Parser();
+        
+            videoStr = parser.parseString(str, SUBSCRIBE_VIDEO);
+            musicStr = parser.parseString(str, SUBSCRIBE_MUSIC);
+            docsStr = parser.parseString(str, SUBSCRIBE_DOCS);
+            allStr = parser.parseString(str, SUBSCRIBE_ALL);
+        
+            if (videoStr != null
+                && videoStr.equals("1"))
+            {
+                video = true;
+            }
+            if (musicStr != null
+                && musicStr.equals("1"))
+            {
+                music = true;
+            }
+            if (docsStr != null
+                && docsStr.equals("1"))
+            {
+                docs = true;
+            }
+            if (allStr != null
+                && allStr.equals("1"))
+            {
+                all = true;
+            }
+            
+            source.subscribe(video, music, docs, all);
+        }
+        
+        return ret;
+    }
+    
+    public int publish()
+    {
+        int ret = SUCCESS;
+        ArrayList <FileList> flistClients = null;
+        ArrayList <FileList> diff = null;
+        Client client = null;
+        
+        flistClients = getFileList();
+        
+        if (flistClients != null)
+        {
+            diff = flistClients.get(0).getDifference(flist, flistClients);
+                
+            if (diff != null)
+            {
+                //send the publish to the clients
+                for (int i = 0; i < clientList.size(); i++)
+                {
+                    client = clientList.get(i);
+                        
+                    if (client != null
+                        && client.isConnected())
+                    {
+                        client.publish(diff);
+                    }
+                 }        
+            }
+            
+            //update the flist
+            flist = flistClients;
         }
         
         return ret;
@@ -445,6 +566,10 @@ public class ServerConnections implements Constants
             else if (str.indexOf(DOWNLOAD_FILE) != -1)
             {
                 ret = getFileToDownload(str, client);
+            }
+            else if (str.indexOf(SUBSCRIBE) != -1)
+            {
+                ret = subscribe(str, client);
             }
         }
         else

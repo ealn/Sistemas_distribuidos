@@ -12,6 +12,10 @@ public class Client extends Thread implements Constants
     private ArrayList <FileList>  flist = null;
     private boolean connected = false;
     private boolean closed = false;
+    private boolean subscribe_video = false;
+    private boolean subscribe_music = false;
+    private boolean subscribe_docs = false;
+    private boolean subscribe_all = false;
     
     public Client(String name, ServerConnections serverCon, TCPServer tcpser)
     {
@@ -124,5 +128,99 @@ public class Client extends Thread implements Constants
     public ArrayList <FileList> getFileList()
     {
         return flist;
+    }
+    
+    public int subscribe(boolean video, boolean music, boolean docs, boolean all)
+    {
+        int ret = SUCCESS;
+        
+        subscribe_video = video;
+        subscribe_music = music;
+        subscribe_docs = docs;  
+        subscribe_all = all;
+        
+        return ret;
+    }
+    
+    public int publish(ArrayList <FileList> diff)
+    {
+        int ret = SUCCESS;
+        
+        if (diff != null)
+        {
+            StringBuffer str = new StringBuffer(PUBLISH);
+            String fileName = null;
+            String ext = null;
+            FileList file = null;
+            int      counter = 0;
+            
+            for (int i = 0; i < diff.size(); i++)
+            {
+                ext = null;
+                file = diff.get(i);
+                
+                if (file != null
+                    && !file.getOwner().equals(clientName))
+                {
+                    fileName = file.getFileName();
+                    ext = fileName.substring(fileName.lastIndexOf("."), 
+                                             fileName.length());
+                    
+                    if (ext != null)
+                    {
+                        if (subscribe_all)
+                        {
+                            str.append(MESSAGE + "New file added: " + fileName);
+                            counter++;
+                        }
+                        else
+                        {
+                            if (subscribe_video
+                                && (ext.equals(".avi")
+                                    || ext.equals(".mov")
+                                    || ext.equals(".mp4")
+                                    || ext.equals(".flv")
+                                    || ext.equals(".mkv")
+                                    || ext.equals(".wmv")
+                                    || ext.equals(".mpg")))
+                            {
+                                str.append(MESSAGE + "New video added: " + fileName);
+                                counter++;
+                            }
+                            else if (subscribe_music
+                                     && (ext.equals(".mp3")
+                                         || ext.equals(".wav")
+                                         || ext.equals(".wma")))
+                            {
+                                str.append(MESSAGE + "New music added: " + fileName);
+                                counter++;
+                            }
+                            else if (subscribe_docs
+                                    && (ext.equals(".doc")
+                                        || ext.equals(".docx")
+                                        || ext.equals(".xls")
+                                        || ext.equals(".xlsx")
+                                        || ext.equals(".ppt")
+                                        || ext.equals(".pptx")
+                                        || ext.equals(".txt")))
+                            {
+                               str.append(MESSAGE + "New document added: " + fileName);
+                               counter++;
+                            }
+                        }
+                    }                            
+                }    
+            }
+            
+            str.append(SEPARATOR);
+            
+            if (counter > 0)
+            {
+                tcpServer.send(clientSocket, str.toString());
+            }
+        }
+        
+        
+        return ret;
     }
 }

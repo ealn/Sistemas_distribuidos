@@ -424,7 +424,7 @@ public class GUI implements Constants
         {
           public void actionPerformed(ActionEvent e) 
           {
-              closeServer();
+              subscribe();
           }
         });
     }
@@ -723,8 +723,13 @@ public class GUI implements Constants
         {
             clientConnection.subscribe(chckbxVideo.isSelected(), 
                                        chckbxMusic.isSelected(), 
-                                       chckbxMusic.isSelected(), 
-                                       chckbxMusic.isSelected());
+                                       chckbxDocs.isSelected(), 
+                                       chckbxAll.isSelected());
+            
+            JOptionPane.showMessageDialog(null,
+                                          "Subscription done",
+                                          "", 
+                                          JOptionPane.INFORMATION_MESSAGE);
         }
     }
 }
