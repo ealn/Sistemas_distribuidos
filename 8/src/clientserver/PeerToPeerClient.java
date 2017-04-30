@@ -1,106 +1,65 @@
 package clientserver;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
 
 public class PeerToPeerClient extends Thread implements Constants
 {
-    private String host = null;
-    private TCPClient tcpClient = null;
+    private ServerSocket serverSocket = null;
+    private Socket clientSocket = null;
     private ClientConnection connection = null;
     
-    public PeerToPeerClient(String name, String hostName, ClientConnection con)
+    public PeerToPeerClient(String name, ClientConnection con)
     {
         super(name);
-        host = hostName;
-        tcpClient = new TCPClient();
         connection = con;
     }
     
     public void run()
-    {
-        String fileName = null;
-        String size = null;
-        long   sizeLong = 0;
-        long   sizeReaded = 0;
-        long   resultSize = 0;
-        File   newFile = null;
-        byte[] recBuff = null;
-        long   n = 0;
-        long   i = 0;
+    {   
+        BufferedInputStream bis;
+        BufferedOutputStream bos;
+        byte[] receivedData;
+        int in;
+        String filename;
         
-        try 
+        try
         {
-            Thread.sleep(300);
-        } 
-        catch (InterruptedException e1) {
-            System.out.println("PeerToPeerClient " + e1.getMessage());
-        }
+            serverSocket = new ServerSocket(DEFAULT_PORT_DOWN);
+           
+            clientSocket = serverSocket.accept();
+           
+            receivedData = new byte[BYTES_READ];
+            bis = new BufferedInputStream(clientSocket.getInputStream());
+            DataInputStream dis=new DataInputStream(clientSocket.getInputStream());
+           
+            //get file name
+            filename = dis.readUTF();
+            File file1 = new File(connection.getSharedFolder().getAbsolutePath() + "/" + filename);
+            bos = new BufferedOutputStream(new FileOutputStream(file1));
         
-        tcpClient.initConnection(host, DEFAULT_PORT_DOWN);
-        
-        //get file name
-        fileName = tcpClient.receive();
-        
-        if (fileName != null)
-        {
-            //get file size
-            size = tcpClient.receive();       
-            sizeLong = Long.parseLong(size);
-            
-            newFile = new File(connection.getSharedFolder().getAbsolutePath() + "\\" + fileName);
-            
-            try 
+            //read
+            while ((in = bis.read(receivedData)) != -1)
             {
-                BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(newFile));
-                
-                //get number of chunks
-                n = (sizeLong/8192) + 1;
-                
-                while (i < n)
-                {
-                    recBuff = tcpClient.receiveBytes();
-                    
-                    if (recBuff != null)
-                    {                   
-                        resultSize = sizeLong - sizeReaded;
-                        
-                        if (resultSize > 8192)
-                        {
-                            sizeReaded += 8192;
-                            out.write(recBuff);
-                        }
-                        else
-                        {
-                            byte[] resBuff = new byte[(int)resultSize];
-                            
-                            System.arraycopy(recBuff, 0, resBuff, 0, resBuff.length);
-                            out.write(resBuff);
-                            sizeReaded = sizeLong;
-                        }                 
-                    }
-                    
-                    i++;
-                }
-                
-                out.flush();
-                out.close();
-            } 
-            catch (FileNotFoundException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            } 
-            catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+                bos.write(receivedData,0,in);
             }
-        }
-        
-        connection.showDownloadMessage();
-        connection.updateLocalFileList();
-        tcpClient.closeConnection();
+            
+            bos.close();
+            dis.close();
+            clientSocket.close();
+            serverSocket.close();
+            
+            connection.showDownloadMessage();
+            connection.updateLocalFileList();
+       }
+       catch (Exception e ) 
+       {
+         System.err.println(e);
+       }    
     } 
 }

@@ -3,7 +3,7 @@ package clientserver;
 public interface Constants 
 {
     public static final int      DEFAULT_PORT =       6789;
-    public static final int      DEFAULT_PORT_DOWN =  6800;
+    public static final int      DEFAULT_PORT_DOWN =  5000;
     public static final int      SUCCESS =            0;
     public static final int      FAIL =               -1;
     public static final int      CLOSED =             -2;
@@ -11,6 +11,8 @@ public interface Constants
     public static final int      FILE_ALR_DOWN =      -4;
     public static final int      FILES_ONLY =         0;
     public static final int      DIRECTORIES_ONLY =   1;
+    public static final int      BYTES_SENT         = 8192;
+    public static final int      BYTES_READ         = 1024;
     public static final String   LOCAL =              "LOCAL";
     public static final String   NET =                "NET";
     public static final String   SERVER =             "SERVER";

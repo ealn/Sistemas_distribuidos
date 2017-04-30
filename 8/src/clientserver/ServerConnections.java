@@ -293,12 +293,15 @@ public class ServerConnections implements Constants
                 //File found 
                 
                 //Send the Request to create a Peer to Peer Server
-                client.send(CREATE_P2P_SERVER + FILE_DOWN + fname + SEPARATOR);
+                client.send(CREATE_P2P_SERVER 
+                            + FILE_DOWN 
+                            + fname 
+                            + IP_P2P_SERVER 
+                            + source.getAddress()
+                            + SEPARATOR);
                 
                 //Send the Request to create a Peer to Peer Client
                 source.send(CREATE_P2P_CLIENT 
-                            + IP_P2P_SERVER 
-                            + client.getAddress()
                             + SEPARATOR);            
             }
         }

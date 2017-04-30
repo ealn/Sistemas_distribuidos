@@ -560,15 +560,29 @@ public class ClientConnection implements Constants
         PeerToPeerServer p2pServer = null;
         String fname = null;
         FileList fileToSend = null;
+        String host = null;
         Parser parser = new Parser();
         
         fname = parser.parseString(str, FILE_DOWN);
         fileToSend = getFileListFromName(fname);
+        host = parser.parseString(str, IP_P2P_SERVER);
         
-        if (fileToSend != null)
+        if (fileToSend != null
+            && host != null)
         {
-           p2pServer = new PeerToPeerServer("P2PServer", fileToSend);    
-           p2pServer.start();
+            if (host.equals("127.0.0.1")) //localhost
+            {
+                //use the address of the socket for this client
+                p2pServer = new PeerToPeerServer("P2PServer", 
+                                                 fileToSend, 
+                                                 tcpClient.getSocket().getInetAddress().getHostAddress());
+            }
+            else
+            {
+                p2pServer = new PeerToPeerServer("P2PServer", fileToSend, host);
+            }
+  
+            p2pServer.start();
         }
         else
         {
@@ -582,30 +596,11 @@ public class ClientConnection implements Constants
     {
         int ret = SUCCESS;
         PeerToPeerClient p2pClient = null;
-        String host = null;
-        Parser parser = new Parser();
-        
-        host = parser.parseString(str, IP_P2P_SERVER);
-        
-        if (host != null)
-        {
-            if (host.equals("127.0.0.1")) //localhost
-            {
-                //use the address of the socket for this client
-                p2pClient = new PeerToPeerClient("P2PClient", tcpClient.getSocket().getInetAddress().getHostAddress(), this);
-            }
-            else
-            {
-                p2pClient = new PeerToPeerClient("P2PClient", host, this);
-            }
-            
-            p2pClient.start();
-        }
-        else
-        {
-            ret = FAIL;
-        }        
-        
+
+        //use the address of the socket for this client
+        p2pClient = new PeerToPeerClient("P2PClient", this);
+        p2pClient.start();
+
         return ret;
     }
     

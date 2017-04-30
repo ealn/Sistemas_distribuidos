@@ -1,76 +1,57 @@
 package clientserver;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.net.Socket;
 
 public class PeerToPeerServer extends Thread implements Constants
 {
-        private TCPServer tcpServer = null;
-        private Socket  clientSocket = null;
+        private Socket   clientSocket = null;
         private FileList file = null;
+        private String   host = null;
         
-        public PeerToPeerServer(String name, FileList fileToSend)
+        public PeerToPeerServer(String name, FileList fileToSend, String hostname)
         {
             super(name);
             file = fileToSend;
-            tcpServer = new TCPServer();
+            host = hostname;
         }
         
         public void run()
         {      
-            byte[] byteArray = null;
-            long n = 0;
-            long i = 0;
-            long bytesReaded = 0;
+            BufferedInputStream bis;
+            BufferedOutputStream bos;
+            int in;
+            byte[] byteArray;
             
-            tcpServer.initServer(DEFAULT_PORT_DOWN);
-            clientSocket = tcpServer.acceptConnetion();
-            
-            if (clientSocket != null)
+            try
             {
-                try 
-                {
-                    BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file.getFile()));
-                    
-                    //send the name
-                    tcpServer.send(clientSocket, file.getFileName());
-
-                    //send the size
-                    tcpServer.send(clientSocket, Long.toString(file.getSize()));
-                    
-                    //get number of chunks
-                    n = (file.getSize()/8192) + 1;
-                    
-                    //send the file
-                    while (i < n)
-                    {
-                        byteArray = new byte[8192];
-                        bis.read(byteArray);
-                        tcpServer.sendBytes(clientSocket, byteArray);
-                        Thread.sleep(1);
-                        i++;
-                    }
-                    
-                    System.out.println("File downloaded");
-                    bis.close();
-                } 
-                catch (FileNotFoundException e) {
-                    System.out.println("");
-                    e.printStackTrace();
-                } 
-                catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                } 
-                catch (InterruptedException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }
+                File localFile = file.getFile();
+                clientSocket = new Socket(host, DEFAULT_PORT_DOWN);
+                
+                bis = new BufferedInputStream(new FileInputStream(localFile));
+                bos = new BufferedOutputStream(clientSocket.getOutputStream());
             
-            tcpServer.closeServer();
+                DataOutputStream dos=new DataOutputStream(clientSocket.getOutputStream());
+                dos.writeUTF(localFile.getName());
+            
+                byteArray = new byte[BYTES_SENT];
+            
+                while ((in = bis.read(byteArray)) != -1)
+                {
+                    bos.write(byteArray,0,in);
+                }
+            
+                bis.close();
+                bos.close();
+                clientSocket.close();            
+           }
+           catch ( Exception e ) 
+           {
+               System.err.println(e);
+           }
         } 
 }

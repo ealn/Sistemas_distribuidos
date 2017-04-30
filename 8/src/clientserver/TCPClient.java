@@ -80,9 +80,12 @@ public class TCPClient implements Constants
         {
             try 
             {
-                //send info
-                output = new DataOutputStream(socket.getOutputStream());
-                output.write(bytes);
+                BufferedOutputStream bos = new BufferedOutputStream(socket.getOutputStream());
+                
+                if (bos != null)
+                {
+                    bos.write(bytes);
+                }
             } 
             catch (IOException e) 
             {
@@ -126,13 +129,12 @@ public class TCPClient implements Constants
         {
             try 
             {
-                //receive info
-                input = new DataInputStream(socket.getInputStream());
+                BufferedInputStream bis = new BufferedInputStream(socket.getInputStream());
                 
-                if (input != null)
+                if (bis != null)
                 {
-                    retByteArray = new byte[8192];
-                    input.read(retByteArray);
+                    retByteArray = new byte[BYTES_READ];
+                    bis.read(retByteArray);
                 }
             } 
             catch (IOException e) 

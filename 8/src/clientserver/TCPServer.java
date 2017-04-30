@@ -99,9 +99,12 @@ public class TCPServer implements Constants
         {
             try 
             {
-                //send info
-                output = new DataOutputStream(clientSocket.getOutputStream());
-                output.write(bytes, 0, bytes.length);
+                BufferedOutputStream bos = new BufferedOutputStream(clientSocket.getOutputStream());
+                
+                if (bos != null)
+                {
+                    bos.write(bytes);
+                }
             } 
             catch (IOException e) 
             {
@@ -149,13 +152,12 @@ public class TCPServer implements Constants
         { 
             try 
             {
-                //receive info
-                input = new DataInputStream(clientSocket.getInputStream());
-
-                if (input != null)
+                BufferedInputStream bis = new BufferedInputStream(clientSocket.getInputStream());
+                
+                if (bis != null)
                 {
-                    retByteArray = new byte[8192];
-                    input.read(retByteArray);
+                    retByteArray = new byte[BYTES_READ];
+                    bis.read(retByteArray);
                 }
             } 
             catch (IOException e) 
